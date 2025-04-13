@@ -4,7 +4,7 @@ A cross-platform mobile food app built using .NET MAUI for the Mobile Computing 
 
 ## 📱 About the App
 
-OctoCook is a recipe and food-focused app. It allows users to find recipes and also create recipes with descriptions and all the details needed to make the dish. It also allows a customer to see different types of dishes for example if they would want to find out how to make an oreo cheesecake it will show different types of cheesecakes with the ingredients and the way to make it. 
+OctoCook is a recipe and food-focused app. It allows users to find recipes and also create recipes with descriptions and all the details needed to make the dish. It also allows a customer to see different types of dishes for example if they would want to find out how to make an oreo cheesecake it will show different types of cheesecakes with the ingredients and the way to make it. It also allows the customer to keep recipes they have found online in a safe place and organised so if they decide to make a type of dessert or cuisine, they can access it on their app where they have saved the recipe.
 
 ## 🔧 Technologies Used
 
