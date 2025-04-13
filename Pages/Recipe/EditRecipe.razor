@@ -1,0 +1,132 @@
+﻿@page "/edit/{id}"
+@using EndToEnd.Data
+@inject RecipeDataService RecipeDataService
+@inject NavigationManager UriHelper
+
+<button class="btn btn-primary"
+        @onclick="NavigateBack">
+    <span class="oi oi-chevron-left" aria-hidden="true"></span> Back
+</button>
+
+<button class="btn btn-success"
+        style="float:right;"
+        @onclick="SaveRecipe">
+    <span class="oi oi-box" aria-hidden="true"></span> Save
+</button>
+
+<p style="color:red">@Error</p>
+@if (recipe == null)
+{
+    <!-- Show this if the current user has no data... yet... -->
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h2>@recipe.Title</h2>
+
+    <label>Title:</label>
+    <input class="form-control" type="text"
+        placeholder="Title"
+        @bind="recipe.Title" />
+    <br />
+    <label>Ready in (minutes):</label>
+    <input class="form-control" type="number"
+       placeholder="minutes"
+       @bind="recipe.ReadyInMinutes" />
+    <br />
+    <label>Servings:</label>
+    <input class="form-control" type="number"
+       placeholder="Servings"
+       @bind="recipe.Servings" />
+    <br />
+    <label>Summary:</label>
+    <TinyMCE.Blazor.Editor 
+        ScriptSrc="/lib/tinymce/tinymce.min.js"
+        Conf="@editorConf"
+        @bind-Value=recipe.Summary />
+    <br />
+    <label>Ingredients:</label>
+    <TinyMCE.Blazor.Editor 
+        ScriptSrc="/lib/tinymce/tinymce.min.js"
+        Conf="@editorConf"
+        @bind-Value=recipe.Ingredients />
+    <br />
+    <label>Instructions:</label>
+    <TinyMCE.Blazor.Editor 
+        ScriptSrc="/lib/tinymce/tinymce.min.js"
+        Conf="@editorConf"
+        @bind-Value=recipe.Instructions />
+    <br />
+    <div>
+        <button class="btn btn-danger"
+            style="width: 100%;"
+            @onclick="DeleteRecipe">
+            <span class="oi oi-trash" aria-hidden="true"></span> Delete Recipe
+        </button>
+    </div>
+    <br />
+
+}
+
+@code
+{
+    private Dictionary<string, object> editorConf = new Dictionary<string, object>{
+       { "menubar", false },
+       { "plugins", "link lists code autoresize" },
+       { "toolbar", "undo redo | styleselect | bold italic numlist bullist" }
+     };
+
+    [Parameter]
+    public string Id { get; set; }
+
+    string Error = "";
+    Recipe recipe = new Recipe();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the forecasts
+        recipe = await RecipeDataService.GetRecipeAsync(int.Parse(Id));
+    }
+
+    async Task SaveRecipe()
+    {
+        Error = "";
+        try
+        {
+            // This is an update
+            await RecipeDataService.UpdateRecipeAsync(recipe);
+            NavigateBack();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    async Task DeleteRecipe()
+    {
+        bool deleteRecipePrompt = await App.Current.MainPage.DisplayAlert("Warning", "Delete Recipe?", "Yes", "No");
+
+        if (deleteRecipePrompt)
+        {
+            try
+            {
+                Error = "";
+                // Delete the recipe
+                await RecipeDataService.DeleteRecipeAsync(recipe);
+                UriHelper.NavigateTo("/recipes");
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+        }
+
+    }
+
+    void NavigateBack()
+    {
+        UriHelper.NavigateTo("/view/" + recipe.Id);
+    }
+
+}

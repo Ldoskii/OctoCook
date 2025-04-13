@@ -1,0 +1,76 @@
+﻿@page "/view/{id}"
+@using EndToEnd.Data
+@inject RecipeDataService RecipeDataService
+@inject NavigationManager UriHelper
+
+<button class="btn btn-primary"
+        @onclick="NavigateBack">
+    <span class="oi oi-chevron-left" aria-hidden="true"></span> Back
+</button>
+
+<button class="btn btn-warning"
+        style="float:right;"
+        @onclick="EditRecipe">
+    <span class="oi oi-brush" aria-hidden="true"></span> Edit
+</button>
+
+<p style="color:red">@Error</p>
+@if (recipe == null)
+{
+    <!-- Show this if the current user has no data... yet... -->
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h2>@recipe.Title</h2>
+    <p>@recipe.Date</p>
+    <div>
+        <table>
+            <tr>
+                <td><b>Ready in:</b></td>
+                <td>@recipe.ReadyInMinutes minutes</td>
+            </tr>
+            <tr>
+                <td><b>Servings:</b></td>
+                <td>@recipe.Servings</td>
+            </tr>
+        </table>
+    </div>
+
+    <br />
+    <div>
+        <h4>Summary</h4>
+        <p>@((MarkupString)recipe.Summary)</p>
+        <h4>Ingredients</h4>
+        <p>@((MarkupString)recipe.Ingredients)</p>
+        <h4>Instructions</h4>
+        <p>@((MarkupString)recipe.Instructions)</p>
+    </div>
+
+}
+
+@code
+{
+    [Parameter]
+    public string Id { get; set; }
+
+    string Error = "";
+    Recipe recipe = new Recipe();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the forecasts
+        recipe = await RecipeDataService.GetRecipeAsync(int.Parse(Id));
+    }
+
+    void NavigateBack()
+    {
+        UriHelper.NavigateTo("/recipes");
+    }
+
+    void EditRecipe()
+    {
+        UriHelper.NavigateTo("/edit/" + recipe.Id);
+    }
+
+}

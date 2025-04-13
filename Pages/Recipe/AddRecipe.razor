@@ -1,0 +1,94 @@
+﻿@page "/add"
+@using EndToEnd.Data
+@inject RecipeDataService RecipeDataService
+@inject NavigationManager UriHelper
+
+<button class="btn btn-primary"
+        @onclick="NavigateBack">
+    <span class="oi oi-chevron-left" aria-hidden="true"></span> Back
+</button>
+<button class="btn btn-success"
+        style="float:right;"
+        @onclick="SaveRecipe">
+    <span class="oi oi-box" aria-hidden="true"></span> Save
+</button>
+
+<p style="color:red">@Error</p>
+
+<h2>New Recipe</h2>
+
+<label>Title:</label>
+<input class="form-control" type="text"
+    placeholder="Title"
+       @bind="objRecipe.Title" />
+<br />
+<label>Ready in (minutes):</label>
+<input class="form-control" type="number"
+       placeholder="minutes"
+       @bind="objRecipe.ReadyInMinutes" />
+<br />
+<label>Servings:</label>
+<input class="form-control" type="number"
+       placeholder="Servings"
+       @bind="objRecipe.Servings" />
+<br />
+<label>Summary:</label>
+<TinyMCE.Blazor.Editor 
+    ScriptSrc="/lib/tinymce/tinymce.min.js"
+    Conf="@editorConf"
+    @bind-Value=objRecipe.Summary />
+<br />
+<label>Ingredients:</label>
+<TinyMCE.Blazor.Editor 
+    ScriptSrc="/lib/tinymce/tinymce.min.js"
+    Conf="@editorConf"
+    @bind-Value=objRecipe.Ingredients />
+<br />
+<label>Instructions:</label>
+<TinyMCE.Blazor.Editor 
+    ScriptSrc="/lib/tinymce/tinymce.min.js"
+    Conf="@editorConf" 
+    @bind-Value=objRecipe.Instructions
+/>
+<br />
+
+
+
+@code
+{
+    private Dictionary<string, object> editorConf = new Dictionary<string, object>{
+       { "menubar", false },
+       { "plugins", "link lists code autoresize" },
+       { "toolbar", "undo redo | styleselect | bold italic numlist bullist" }
+     };
+
+    Recipe objRecipe = new EndToEnd.Data.Recipe();
+    string Error = "";
+
+    async Task SaveRecipe()
+    {
+        Error = "";
+
+        try{
+            //add date of creation
+            objRecipe.Date = System.DateTime.Now;
+
+            // Save the new recipe
+            await RecipeDataService.CreateRecipeAsync(objRecipe);
+
+            NavigateBack();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        
+    }
+
+
+    void NavigateBack()
+    {
+        UriHelper.NavigateTo("/recipes");
+    }
+
+}

@@ -1,0 +1,170 @@
+﻿@page "/search"
+@inject RecipeDataService RecipeDataService
+@using OctoCook.Data.API
+@using System.Text.Json
+@using System.Text
+@using EndToEnd.Data
+@using OctoCook.Data.API.Spoonacular
+@using System.Text.Json.Nodes
+
+
+<h1>Search Recipes</h1>
+<br />
+    <div>
+        <input class="form-control" type="text"
+               placeholder="Recipe"
+               @bind="searchString" />
+       
+        <br />
+        <button class="btn btn-primary" style="width: 100%;" @onclick=@(async () => await getRecipes())>
+            <span class="oi oi-magnifying-glass" aria-hidden="true"></span> Search
+        </button>
+
+        <hr />
+        @if (showDetails == true)
+        {
+            <div class="card">
+                <div class="card-header">
+                <button class="btn btn-success" @onclick=(SaveRecipe)>
+                        Save
+                    </button>
+                    <button class="btn btn-danger" @onclick=(closeRecipe)>
+                        Close
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">@RecipeDetails.title</h5>
+                    <img srcset="@RecipeDetails.image 2x"><br /><br />
+                    <p><b>Servings:</b> @RecipeDetails.servings <b>Time:</b> @RecipeDetails.readyInMinutes min</p>
+                    <b class="card-title">Ingredients</b>
+                    <ul class="card-text">
+                        @foreach (var ingredient in Ingredients)
+                        {
+                            <li>@ingredient.amount @ingredient.unit @ingredient.name</li>
+                        }
+                    </ul>
+                    <b class="card-title">Summary</b>
+                    <p class="card-text">@((MarkupString)RecipeDetails.summary)</p>
+                    <b class="card-title">Instructions</b>
+                    <p class="card-text">@((MarkupString)RecipeDetails.instructions)</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <a href="@RecipeDetails.sourceUrl">Source</a>
+                </div>
+            </div>
+        }
+        else {
+        <div class="container d-flex flex-wrap align-items-center">
+            @foreach (var recipe in Recipes)
+            {
+                <div class="card minicard" style="width: 18rem;" @onclick="(async () => await getRecipesDetails(recipe.id))">
+                    <img class="card-img-top" srcset="@recipe.image 2x" alt="Card image cap">
+                    <div class="card-body">
+                        <h6 class="card-title">@recipe.title</h6>
+                    </div>
+                </div>
+            }
+        </div>
+        }
+</div>
+
+
+@code {
+    string response = "";
+
+    HttpClient _client = new HttpClient();
+    List<SpoonRecipe> Recipes = new List<SpoonRecipe>();
+    SpoonRecipeDetails RecipeDetails = new SpoonRecipeDetails();
+    List<SpoonIngredient> Ingredients = new List<SpoonIngredient>();
+
+    bool showDetails = false;
+    string searchString = "";
+    private string apiKey = "41ab32c269db431699d6f5762913f3a7";
+    string apiSearchString = "https://api.spoonacular.com/recipes/complexSearch?apiKey=";
+    string apiRecipeString = "https://api.spoonacular.com/recipes/";
+
+
+    private void closeRecipe(){
+        showDetails = false;
+    }
+
+    private async Task SaveRecipe()
+    {
+        string Error = "";
+        // TODO: some recipes don't work, need to figure out why
+        try
+        {
+            // Create new recipe
+            List<EndToEnd.Data.Recipe> recipes = new List<EndToEnd.Data.Recipe>();
+            EndToEnd.Data.Recipe recipe = new EndToEnd.Data.Recipe();
+            recipe.Date = System.DateTime.Now;
+            recipe.Title = RecipeDetails.title ??= "";
+            recipe.ReadyInMinutes = RecipeDetails.readyInMinutes;
+            recipe.Servings = RecipeDetails.servings;
+            recipe.Summary = RecipeDetails.summary ??= "";
+            recipe.Instructions = RecipeDetails.instructions ??= "";
+
+            //Turn Ingredients list into HTML string
+            string ingredientsString = "";
+            ingredientsString += "<ul>";
+            foreach(SpoonIngredient spi in Ingredients)
+            {
+                ingredientsString += "<li>" + spi.amount + " ";
+                ingredientsString += spi.unit + " ";
+                ingredientsString += spi.name + "</li>";
+            }
+
+            ingredientsString += "</ul>";
+            recipe.Ingredients = ingredientsString;
+
+
+            // Save the result
+            var NewRecipe =
+            await RecipeDataService.CreateRecipeAsync(recipe); 
+            // Add the recipe
+            recipes.Add(NewRecipe);
+            closeRecipe();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+
+    }
+
+
+    private async Task getRecipesDetails(int recipeID)
+    {
+        showDetails = true;
+
+        var options = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true };
+        response = await _client.GetStringAsync(apiRecipeString + recipeID + "/information?apiKey=" + apiKey);
+
+        JsonNode resultsNode = JsonNode.Parse(response)!;
+        //The ingredients are nested in a node called extendedIngredients, so lets grab those
+        JsonNode ingredientsNode = resultsNode!["extendedIngredients"];
+
+        Ingredients = JsonSerializer.Deserialize<List<SpoonIngredient>>(ingredientsNode.ToJsonString(), options);
+        RecipeDetails = JsonSerializer.Deserialize<SpoonRecipeDetails>(resultsNode.ToJsonString(), options);
+
+    }
+
+    private async Task getRecipes()
+    {
+        var options = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true };
+        response = await _client.GetStringAsync(apiSearchString + apiKey + "&query=" + searchString);
+
+        //The recipes are nested in a node called results, so lets grab those
+        JsonNode resultsNode = JsonNode.Parse(response)!;
+        resultsNode = resultsNode!["results"];
+
+        Recipes = JsonSerializer.Deserialize<List<SpoonRecipe>>(resultsNode.ToJsonString(), options);
+
+    }
+
+
+
+
+      
+
+}

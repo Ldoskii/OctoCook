@@ -1,0 +1,63 @@
+﻿@page "/recipes"
+@using EndToEnd.Data
+@inject RecipeDataService RecipeDataService
+@inject NavigationManager UriHelper
+
+<!-- Add a new recipe -->
+<button class="btn btn-success"
+        style="float:right;"
+        @onclick="AddNewRecipe">
+    <span class="oi oi-plus" aria-hidden="true"></span> Add Recipe
+</button>
+
+<h1>My Recipes</h1>
+
+
+@if (recipes == null)
+{
+    <!-- Show this if the current user has no data... yet... -->
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <!-- Show the Recipes -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var recipe in recipes)
+            {
+                <tr @onclick="(() => OpenRecipe(recipe))" style="cursor:pointer;">
+                    <td>@recipe.Date.ToShortDateString()</td>
+                    <td>@recipe.Title</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+  
+}
+
+@code
+{
+    List<EndToEnd.Data.Recipe> recipes = new List<EndToEnd.Data.Recipe>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the recipes
+        recipes = await RecipeDataService.GetRecipesAsync();
+    }
+    void AddNewRecipe()
+    {
+        UriHelper.NavigateTo("/add");
+    }
+
+    void OpenRecipe(EndToEnd.Data.Recipe recipe)
+    {
+        UriHelper.NavigateTo("/view/" + recipe.Id);
+    }
+
+}
